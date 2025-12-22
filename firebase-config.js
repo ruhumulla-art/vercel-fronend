@@ -17,4 +17,6 @@ const app = initializeApp(firebaseConfig);
 // Export Auth
 export const auth = getAuth(app);
 
+export const db = getFirestore(app); // यह लाइन जोड़ें
+
 export default app;
