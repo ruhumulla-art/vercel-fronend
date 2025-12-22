@@ -1,7 +1,7 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore"; // यह इम्पोर्ट ज़रूरी है
 
-// Firebase config using ENV variables
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -11,12 +11,10 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Singleton pattern: पक्का करता है कि ऐप केवल एक बार लोड हो
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Export Auth
 export const auth = getAuth(app);
-
-export const db = getFirestore(app); // यह लाइन जोड़ें
+export const db = getFirestore(app); // अब यह सही काम करेगा
 
 export default app;

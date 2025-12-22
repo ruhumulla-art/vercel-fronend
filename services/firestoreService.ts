@@ -5,12 +5,18 @@ import {
   getDocs, 
   query, 
   where, 
-  serverTimestamp,
+  serverTimestamp 
 } from 'firebase/firestore';
 
-// 1. ऑर्डर सेव करने के लिए (Checkout Page के लिए)
+// 1. ऑर्डर सेव करने के लिए (Checkout Page)
 export const saveOrder = async (cartItems: any[], total: number, customerId?: string) => {
-  console.log("📡 firestoreService: saveOrder फंक्शन कॉल हुआ है...");
+  console.log("🚀 FirestoreService: saveOrder प्रक्रिया शुरू...");
+  
+  if (!db) {
+    console.error("❌ Error: Firestore Database (db) लोड नहीं हुआ है!");
+    return { success: false, error: "Database instance not found" };
+  }
+
   try {
     const orderData = {
       customerId: customerId || 'guest',
@@ -19,49 +25,28 @@ export const saveOrder = async (cartItems: any[], total: number, customerId?: st
       status: 'pending',
       createdAt: serverTimestamp(),
     };
+
+    console.log("📤 Firebase को डेटा भेज रहे हैं:", orderData);
     
-    console.log("📤 Firebase के 'orders' कलेक्शन में डेटा भेज रहे हैं:", orderData);
-    
+    // 'orders' कलेक्शन में डेटा सेव करना
     const docRef = await addDoc(collection(db, "orders"), orderData);
     
-    console.log("✨ डेटाबेस में सफलतापूर्वक सेव हुआ! ID:", docRef.id);
+    console.log("✅ सफलता! Firebase में ऑर्डर आईडी:", docRef.id);
     return { success: true, id: docRef.id };
   } catch (error: any) {
-    console.error("🔥 Firebase Error (saveOrder):", error.message);
+    console.error("🔥 Firebase Save Error:", error.message);
     return { success: false, error: error.message };
   }
 };
 
-// 2. कार्ट में आइटम जोड़ने के लिए
-export const addToDbCart = async (userId: string, product: any) => {
-  console.log("🛒 firestoreService: addToDbCart कॉल हुआ...");
-  try {
-    const docRef = await addDoc(collection(db, "userCarts"), {
-      userId,
-      productId: product.id,
-      name: product.name,
-      price: product.price,
-      addedAt: serverTimestamp(),
-    });
-    console.log("✅ कार्ट आइटम सेव हुआ ID:", docRef.id);
-    return { success: true, id: docRef.id };
-  } catch (error: any) {
-    console.error("🔥 Firebase Error (addToDbCart):", error.message);
-    return { success: false, error: error.message };
-  }
-};
-
-// 3. किसी कस्टमर के ऑर्डर्स देखने के लिए
+// 2. ऑर्डर्स देखने के लिए (Dashboard)
 export const getCustomerOrders = async (customerId: string) => {
-  console.log("📂 firestoreService: ऑर्डर्स फेच कर रहे हैं कस्टमर के लिए:", customerId);
   try {
     const q = query(collection(db, "orders"), where("customerId", "==", customerId));
     const querySnapshot = await getDocs(q);
-    const orders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    console.log(`📊 कुल ${orders.length} ऑर्डर्स मिले।`);
-    return orders;
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (error: any) {
-    console.error("🔥 Firebase Error (getCustomerOrders):", error.message);
+    console.error("🔥 Fetch Error:", error.message);
     return [];
   }
 };
