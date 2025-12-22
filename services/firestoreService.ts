@@ -8,8 +8,8 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 
+// 1. ऑर्डर सेव करने के लिए
 export const saveOrder = async (cartItems: any[], total: number, customerId?: string) => {
-  // Debugging के लिए सबसे पहले लॉग
   console.log("🚀 FirestoreService: saveOrder प्रक्रिया शुरू...");
   
   if (!db) {
@@ -18,32 +18,27 @@ export const saveOrder = async (cartItems: any[], total: number, customerId?: st
   }
 
   try {
-    // डेटा को साफ़ तरीके से तैयार करना
     const orderData = {
       customerId: customerId || 'guest',
-      items: JSON.parse(JSON.stringify(cartItems)), // Proxy objects को plain JSON में बदलने के लिए
-      totalAmount: Number(total), // पक्का करें कि यह नंबर है
+      items: JSON.parse(JSON.stringify(cartItems)), // Proxy objects फिक्स करने के लिए
+      totalAmount: Number(total),
       status: 'pending',
       createdAt: serverTimestamp(),
     };
 
     console.log("📤 Firebase को डेटा भेज रहे हैं:", orderData);
     
-    // कलेक्शन रेफरेंस
-    const ordersRef = collection(db, "orders");
-    
-    // डेटा सेव करना
-    const docRef = await addDoc(ordersRef, orderData);
+    const docRef = await addDoc(collection(db, "orders"), orderData);
     
     console.log("✅ सफलता! Firebase में ऑर्डर आईडी:", docRef.id);
     return { success: true, id: docRef.id };
   } catch (error: any) {
-    // विस्तृत एरर लॉगिंग
     console.error("🔥 Firebase Save Error Detail:", error);
     return { success: false, error: error.message };
   }
 };
 
+// 2. पुराने ऑर्डर्स देखने के लिए
 export const getCustomerOrders = async (customerId: string) => {
   try {
     const q = query(collection(db, "orders"), where("customerId", "==", customerId));
