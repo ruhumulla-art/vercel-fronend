@@ -1,8 +1,9 @@
-
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+// Step 2 का Import यहाँ है
+import { saveOrder } from '../services/firestoreService'; 
 
 const Checkout = () => {
   const { cartTotal, clearCart, cart } = useStore();
@@ -16,18 +17,28 @@ const Checkout = () => {
     }
   }, [cart, navigate]);
 
-  const handlePayment = (e: React.FormEvent) => {
+  // Final Firebase Logic यहाँ है
+  const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
 
-    // Simulate API delay
-    setTimeout(() => {
+    try {
+      // firestoreService फंक्शन को कॉल कर रहे हैं
+      const result = await saveOrder(cart, cartTotal);
+
+      if (result.success) {
+        setIsProcessing(false);
+        clearCart();
+        alert("Order Placed Successfully! Order ID: " + result.id);
+        navigate('/dashboard');
+      } else {
+        throw new Error("Firebase save failed");
+      }
+    } catch (error) {
+      console.error("Order Error:", error);
+      alert("Something went wrong. Please try again.");
       setIsProcessing(false);
-      clearCart();
-      navigate('/dashboard');
-      // In a real app, we would likely show a success page first
-      alert("Order Placed Successfully"); 
-    }, 2000);
+    }
   };
 
   return (
