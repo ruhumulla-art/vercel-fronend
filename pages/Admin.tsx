@@ -1,91 +1,66 @@
-
-import React from 'react';
-import { useStore } from '../context/StoreContext';
-import { PRODUCTS, MOCK_ORDERS } from '../services/mockData';
-import { BarChart, Users, DollarSign, Package } from 'lucide-react';
-
-// Admin Panel
-// Only basic UI for stats and management
+import React, { useState } from 'react';
+import { db } from '../firebase-config';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { Loader2, PlusCircle, Image as ImageIcon, Tag, DollarSign } from 'lucide-react';
 
 const Admin = () => {
-  const { user } = useStore();
+  const [loading, setLoading] = useState(false);
+  const [product, setProduct] = useState({ name: '', price: '', image: '', description: '', category: 'Handbags' });
 
-  if (user?.role !== 'admin') {
-    return (
-        <div className="h-[60vh] flex items-center justify-center flex-col">
-            <h1 className="text-4xl text-stone-300 font-serif mb-4">Restricted Access</h1>
-            <p className="text-stone-500">This area is reserved for administrators.</p>
-        </div>
-    );
-  }
+  const handleAddProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await addDoc(collection(db, "products"), {
+        ...product,
+        price: Number(product.price),
+        createdAt: serverTimestamp()
+      });
+      alert("Product added successfully!");
+      setProduct({ name: '', price: '', image: '', description: '', category: 'Handbags' });
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add product.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-12 pb-24">
-      <h1 className="text-3xl font-serif text-stone-900 mb-10">Atelier Management</h1>
+    <div className="min-h-screen bg-stone-50 py-12 px-4">
+      <div className="max-w-2xl mx-auto bg-white p-10 rounded-2xl shadow-lg">
+        <h1 className="text-3xl font-serif text-stone-900 mb-8 flex items-center gap-3">
+          <PlusCircle className="text-stone-400" /> Add New Product
+        </h1>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-        <div className="bg-white p-6 shadow-sm border border-stone-100">
-           <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-stone-50 text-stone-900"><DollarSign size={20} strokeWidth={1.5}/></div>
-           </div>
-           <p className="text-stone-500 text-xs uppercase tracking-widest mb-1">Revenue</p>
-           <h3 className="text-2xl font-serif text-stone-900">₹84,500</h3>
-        </div>
-        <div className="bg-white p-6 shadow-sm border border-stone-100">
-           <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-stone-50 text-stone-900"><Users size={20} strokeWidth={1.5}/></div>
-           </div>
-           <p className="text-stone-500 text-xs uppercase tracking-widest mb-1">Clients</p>
-           <h3 className="text-2xl font-serif text-stone-900">1,234</h3>
-        </div>
-        <div className="bg-white p-6 shadow-sm border border-stone-100">
-           <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-stone-50 text-stone-900"><Package size={20} strokeWidth={1.5}/></div>
-           </div>
-           <p className="text-stone-500 text-xs uppercase tracking-widest mb-1">Products</p>
-           <h3 className="text-2xl font-serif text-stone-900">{PRODUCTS.length}</h3>
-        </div>
-        <div className="bg-white p-6 shadow-sm border border-stone-100">
-           <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-stone-50 text-stone-900"><BarChart size={20} strokeWidth={1.5}/></div>
-           </div>
-           <p className="text-stone-500 text-xs uppercase tracking-widest mb-1">Orders</p>
-           <h3 className="text-2xl font-serif text-stone-900">12</h3>
-        </div>
-      </div>
+        <form onSubmit={handleAddProduct} className="space-y-6">
+          <div className="space-y-4">
+            <div className="relative">
+              <Tag className="absolute left-3 top-3 text-stone-400" size={18} />
+              <input type="text" placeholder="Product Name" required className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-lg outline-none focus:ring-2 focus:ring-stone-900" 
+                value={product.name} onChange={(e) => setProduct({...product, name: e.target.value})} />
+            </div>
 
-      {/* Recent Orders Table */}
-      <div className="bg-white border border-stone-100 shadow-sm">
-        <div className="p-6 border-b border-stone-100">
-           <h3 className="text-lg font-serif text-stone-900">Recent Transactions</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-stone-600">
-            <thead className="bg-stone-50 text-xs uppercase tracking-widest font-bold text-stone-500">
-              <tr>
-                <th className="p-4 font-normal">Order Ref</th>
-                <th className="p-4 font-normal">Date</th>
-                <th className="p-4 font-normal">Status</th>
-                <th className="p-4 text-right font-normal">Amount</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-               {MOCK_ORDERS.map(order => (
-                 <tr key={order.id} className="hover:bg-stone-50 transition-colors">
-                   <td className="p-4 font-medium text-stone-900">{order.id}</td>
-                   <td className="p-4 text-sm">{order.date}</td>
-                   <td className="p-4">
-                     <span className={`text-[10px] px-2 py-1 uppercase tracking-wider ${order.status === 'Delivered' ? 'bg-stone-100 text-stone-600' : 'bg-gold-50 text-gold-600'}`}>
-                       {order.status}
-                     </span>
-                   </td>
-                   <td className="p-4 text-right font-medium text-stone-900">₹{order.total.toLocaleString()}</td>
-                 </tr>
-               ))}
-            </tbody>
-          </table>
-        </div>
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-3 text-stone-400" size={18} />
+              <input type="number" placeholder="Price" required className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-lg outline-none focus:ring-2 focus:ring-stone-900" 
+                value={product.price} onChange={(e) => setProduct({...product, price: e.target.value})} />
+            </div>
+
+            <div className="relative">
+              <ImageIcon className="absolute left-3 top-3 text-stone-400" size={18} />
+              <input type="text" placeholder="Image URL (Direct link)" required className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-lg outline-none focus:ring-2 focus:ring-stone-900" 
+                value={product.image} onChange={(e) => setProduct({...product, image: e.target.value})} />
+            </div>
+
+            <textarea placeholder="Product Description" rows={4} className="w-full p-4 bg-stone-50 border border-stone-200 rounded-lg outline-none focus:ring-2 focus:ring-stone-900" 
+              value={product.description} onChange={(e) => setProduct({...product, description: e.target.value})} />
+          </div>
+
+          <button type="submit" disabled={loading} className="w-full bg-stone-900 text-white font-bold py-4 rounded-lg uppercase tracking-widest flex items-center justify-center gap-2">
+            {loading ? <Loader2 className="animate-spin" /> : "Publish Product"}
+          </button>
+        </form>
       </div>
     </div>
   );

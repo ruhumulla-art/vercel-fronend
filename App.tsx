@@ -1,12 +1,15 @@
-
 import React, { Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+
+// 1. Firebase को यहाँ इम्पोर्ट किया गया है ताकि ऐप शुरू होते ही यह एक्टिव हो जाए
+import './firebase-config'; 
+
 import { StoreProvider } from './context/StoreContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 
-// Lazy load pages for better performance (Code Splitting)
+// Lazy load pages for better performance
 const Home = lazy(() => import('./pages/Home'));
 const Shop = lazy(() => import('./pages/Shop'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
