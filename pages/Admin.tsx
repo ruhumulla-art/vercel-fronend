@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase-config';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { 
-  LayoutDashboard, Package, ShoppingCart, Users, FileText, 
-  Image as ImageIcon, Plus, Search, Edit, Trash2, X, 
-  Save, Globe, UploadCloud, TrendingUp, CheckCircle
+  Loader2, PlusCircle, Image as ImageIcon, ShoppingCart, 
+  CheckCircle, Upload, LayoutDashboard, Package, 
+  TrendingUp, Trash2, LogOut, Settings, Bell, DollarSign,
+  Users, CreditCard, Activity, Search, Filter, Download
 } from 'lucide-react';
 import { useAdminAuth } from '../Hook/useAdminAuth'; 
 
@@ -12,19 +13,14 @@ const Admin = () => {
   const { isAdmin, checking } = useAdminAuth(); 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(false);
-  
-  // Data States
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
-  
-  // Product Form State (Based on your Catalog.tsx)
+
   const [base64Image, setBase64Image] = useState<string>("");
-  const [productForm, setProductForm] = useState({ 
-    name: '', sku: '', price: '', stock: '10', category: 'Handbags', 
-    description: '', metaTitle: '', status: 'Active' 
+  const [product, setProduct] = useState({ 
+    name: '', price: '', description: '', category: 'Handbags', stock: '10', sku: 'LH-' + Math.floor(Math.random() * 9000) 
   });
 
-  // --- Real-time Firebase Sync ---
   useEffect(() => {
     if (!isAdmin) return;
     const unsubP = onSnapshot(query(collection(db, "products"), orderBy("createdAt", "desc")), (snap) => 
@@ -34,7 +30,6 @@ const Admin = () => {
     return () => { unsubP(); unsubO(); };
   }, [isAdmin]);
 
-  // --- Functions ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -44,120 +39,160 @@ const Admin = () => {
     }
   };
 
-  const handlePublish = async (e: React.FormEvent) => {
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!base64Image) return alert("Please select an image!");
+    if (!base64Image) return alert("Please select an image first!");
     setLoading(true);
     try {
       await addDoc(collection(db, "products"), {
-        ...productForm,
-        image: base64Image, // Integrated Base64 support
-        price: Number(productForm.price),
-        stock: Number(productForm.stock),
-        createdAt: serverTimestamp()
+        ...product, image: base64Image, price: Number(product.price),
+        stock: Number(product.stock), createdAt: serverTimestamp()
       });
-      alert("Product successfully added to Catalog!");
-      setProductForm({ name: '', sku: '', price: '', stock: '10', category: 'Handbags', description: '', metaTitle: '', status: 'Active' });
+      alert("Bag Published to Boutique!");
+      setProduct({ name: '', price: '', description: '', category: 'Handbags', stock: '10', sku: 'LH-' + Math.floor(Math.random() * 9000) });
       setBase64Image("");
-    } catch (err) { alert("Error adding product."); } finally { setLoading(false); }
+    } catch (err) { alert("Execution Failed!"); } finally { setLoading(false); }
   };
 
-  if (checking) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#eb5202]" /></div>;
+  if (checking) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-stone-300" size={40} /></div>;
   if (!isAdmin) return null;
 
   return (
-    <div className="min-h-screen bg-[#f4f4f4] flex font-sans">
-      {/* --- SIDEBAR (Matching your Content.tsx logic) --- */}
-      <aside className="w-64 bg-[#333] text-white flex flex-col p-6 shadow-xl">
-        <div className="mb-10 pb-6 border-b border-gray-700">
-          <h1 className="text-2xl font-light tracking-widest uppercase">Lora Halle</h1>
-          <p className="text-[10px] text-gray-500 uppercase mt-1">Admin Engine</p>
+    <div className="min-h-screen bg-[#FBFBFB] flex font-sans text-stone-900">
+      {/* --- Sidebar (Elite Dark Design) --- */}
+      <aside className="w-80 bg-stone-950 text-white flex flex-col p-8 space-y-12 shadow-2xl z-50">
+        <div className="flex flex-col gap-2 border-b border-stone-800 pb-8">
+          <span className="text-[10px] font-bold tracking-[0.5em] text-stone-500 uppercase">Administrator</span>
+          <h1 className="text-3xl font-serif italic font-light">Atelier OS</h1>
         </div>
-        
-        <nav className="flex-grow space-y-2">
+
+        <nav className="flex-grow space-y-4">
           {[
-            { id: 'dashboard', icon: <LayoutDashboard size={18}/>, label: 'Dashboard' },
-            { id: 'catalog', icon: <Package size={18}/>, label: 'Catalog' },
-            { id: 'orders', icon: <ShoppingCart size={18}/>, label: 'Orders' },
-            { id: 'content', icon: <FileText size={18}/>, label: 'Content' },
+            { id: 'dashboard', icon: <Activity size={20}/>, label: 'Analytics Hub' },
+            { id: 'inventory', icon: <Package size={20}/>, label: 'Boutique Inventory' },
+            { id: 'orders', icon: <CreditCard size={20}/>, label: 'Transactions' },
+            { id: 'customers', icon: <Users size={20}/>, label: 'Private Clients' },
           ].map(item => (
             <button key={item.id} onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-sm text-xs font-bold uppercase tracking-wider transition-all ${activeTab === item.id ? 'bg-[#eb5202] text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+              className={`w-full flex items-center gap-5 px-6 py-5 rounded-[24px] text-[11px] font-bold uppercase tracking-[0.2em] transition-all duration-300 ${activeTab === item.id ? 'bg-white text-stone-900 shadow-2xl scale-105' : 'text-stone-500 hover:text-white hover:bg-stone-900'}`}>
               {item.icon} {item.label}
             </button>
           ))}
         </nav>
+
+        <div className="bg-stone-900/50 p-6 rounded-[32px] border border-stone-800">
+          <p className="text-[9px] font-bold text-stone-500 uppercase tracking-widest mb-4">Storage Used</p>
+          <div className="h-1.5 w-full bg-stone-800 rounded-full overflow-hidden">
+            <div className="h-full bg-white w-3/4 rounded-full"></div>
+          </div>
+          <p className="text-[9px] mt-3 text-stone-400">75% Capacity (Spark Plan)</p>
+        </div>
       </aside>
 
-      {/* --- MAIN CONTENT --- */}
-      <main className="flex-grow p-10 overflow-y-auto">
-        <header className="flex justify-between items-center mb-8 border-b border-gray-200 pb-6">
-          <h2 className="text-3xl font-light text-[#333] capitalize">{activeTab} Management</h2>
+      {/* --- Main Dashboard Body --- */}
+      <main className="flex-grow p-14 overflow-y-auto">
+        <header className="flex justify-between items-end mb-16">
+          <div>
+            <p className="text-stone-400 text-xs font-bold uppercase tracking-[0.3em] mb-2">Workspace Overview</p>
+            <h2 className="text-5xl font-serif text-stone-900 tracking-tight capitalize">{activeTab}</h2>
+          </div>
           <div className="flex gap-4">
-             <div className="text-right mr-4"><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</p><p className="text-xs font-bold text-green-600">LIVE SYNC</p></div>
+            <button className="bg-white p-4 rounded-full border border-stone-100 shadow-sm text-stone-400 hover:text-stone-900"><Bell size={20}/></button>
+            <button className="bg-stone-900 text-white px-8 py-4 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-xl">System Update</button>
           </div>
         </header>
 
-        {/* 1. Dashboard View (Integrated from Dashboard.tsx) */}
+        {/* Dashboard View (Analytics & Quick Actions) */}
         {activeTab === 'dashboard' && (
-          <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="grid grid-cols-4 gap-6">
-              <KPICard title="Revenue" value={`₹${products.length * 4999}+`} icon={<TrendingUp className="text-green-500"/>} />
-              <KPICard title="Total Orders" value={orders.length} icon={<ShoppingCart className="text-blue-500"/>} />
-              <KPICard title="Live SKUs" value={products.length} icon={<Package className="text-orange-500"/>} />
-              <KPICard title="Customers" value="24" icon={<Users className="text-purple-500"/>} />
+          <div className="space-y-12">
+            <div className="grid grid-cols-3 gap-8">
+              <div className="bg-white p-10 rounded-[48px] border border-stone-100 shadow-sm relative overflow-hidden group">
+                <DollarSign className="absolute -right-4 -top-4 text-stone-50/50" size={120} />
+                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-[0.2em]">Total Sales Value</p>
+                <h3 className="text-4xl font-serif mt-3 italic tracking-tighter">₹{products.length * 4999}+</h3>
+                <div className="mt-6 flex items-center gap-2 text-green-500 text-[10px] font-bold">
+                  <TrendingUp size={14}/> +12.5% GROWTH
+                </div>
+              </div>
+              <div className="bg-white p-10 rounded-[48px] border border-stone-100 shadow-sm">
+                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-[0.2em]">Active Inventory</p>
+                <h3 className="text-4xl font-serif mt-3">{products.length} <span className="text-sm italic">SKUs</span></h3>
+                <p className="mt-6 text-[10px] font-bold text-stone-300">STABLE STOCK LEVELS</p>
+              </div>
+              <div className="bg-white p-10 rounded-[48px] border border-stone-100 shadow-sm">
+                <p className="text-stone-400 text-[10px] font-bold uppercase tracking-[0.2em]">Unprocessed Orders</p>
+                <h3 className="text-4xl font-serif mt-3">{orders.filter(o => o.orderStatus === 'Pending').length}</h3>
+                <p className="mt-6 text-[10px] font-bold text-amber-500 uppercase">Action Required</p>
+              </div>
             </div>
 
-            {/* Quick Add Form (From Catalog.tsx logic) */}
-            <div className="bg-white p-8 rounded-sm border border-gray-200 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-700 mb-6 flex items-center gap-2"><Plus size={18} className="text-[#eb5202]"/> New Catalog Entry</h3>
-              <form onSubmit={handlePublish} className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
-                   <input type="text" placeholder="Product Name" className="w-full border p-3 text-sm focus:border-[#eb5202] outline-none" value={productForm.name} onChange={e=>setProductForm({...productForm, name: e.target.value})} required />
-                   <div className="flex gap-4">
-                     <input type="text" placeholder="SKU Code" className="w-full border p-3 text-sm outline-none" value={productForm.sku} onChange={e=>setProductForm({...productForm, sku: e.target.value})} required />
-                     <input type="number" placeholder="Price" className="w-full border p-3 text-sm outline-none font-bold" value={productForm.price} onChange={e=>setProductForm({...productForm, price: e.target.value})} required />
-                   </div>
-                   <textarea placeholder="Product SEO Description" rows={4} className="w-full border p-3 text-sm outline-none" value={productForm.description} onChange={e=>setProductForm({...productForm, description: e.target.value})} />
+            {/* Elite Quick Publish Form */}
+            <div className="bg-white p-12 rounded-[56px] shadow-2xl shadow-stone-200/40 border border-stone-50">
+              <div className="flex justify-between items-center mb-10">
+                <h3 className="text-2xl font-serif italic tracking-tight">Rapid Product Deployment</h3>
+                <span className="text-[9px] font-bold text-stone-300 uppercase tracking-widest italic">Automated Indexing</span>
+              </div>
+              <form onSubmit={handleAddProduct} className="grid grid-cols-3 gap-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest ml-1">Product Identity</label>
+                  <input type="text" placeholder="e.g. Midnight Suede Clutch" className="w-full p-5 bg-stone-50 rounded-[24px] outline-none border border-transparent focus:border-stone-200" value={product.name} onChange={e=>setProduct({...product, name:e.target.value})} required />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest ml-1">Valuation (INR)</label>
+                  <input type="number" placeholder="4999" className="w-full p-5 bg-stone-50 rounded-[24px] outline-none border border-transparent focus:border-stone-200" value={product.price} onChange={e=>setProduct({...product, price:e.target.value})} required />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest ml-1">Stock Allocation</label>
+                  <input type="number" placeholder="10" className="w-full p-5 bg-stone-50 rounded-[24px] outline-none border border-transparent focus:border-stone-200" value={product.stock} onChange={e=>setProduct({...product, stock:e.target.value})} required />
                 </div>
                 
-                <div className="border-2 border-dashed border-gray-200 rounded-sm p-6 flex flex-col items-center justify-center bg-gray-50 hover:bg-[#fff4e5] transition-all cursor-pointer relative">
-                   <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-                   {base64Image ? <img src={base64Image} className="h-48 rounded-sm shadow-md" /> : (
-                     <>
-                      <UploadCloud size={40} className="text-gray-300 mb-2" />
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Upload Master Media</p>
-                      <p className="text-[10px] text-gray-400 mt-1">Direct Local Import Enabled</p>
-                     </>
-                   )}
+                <div className="col-span-3 border-2 border-dashed border-stone-100 p-14 rounded-[40px] text-center hover:bg-stone-50/50 transition-all cursor-pointer group">
+                  <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" id="megaIn" />
+                  <label htmlFor="megaIn" className="cursor-pointer flex flex-col items-center gap-6">
+                    {base64Image ? (
+                      <div className="relative">
+                        <img src={base64Image} className="h-56 rounded-[32px] shadow-2xl border-8 border-white group-hover:scale-105 transition-transform" />
+                        <div className="absolute -top-4 -right-4 bg-black text-white p-3 rounded-full shadow-xl"><CheckCircle size={20}/></div>
+                      </div>
+                    ) : (
+                      <div className="w-24 h-24 bg-stone-100 rounded-full flex items-center justify-center text-stone-300 group-hover:text-stone-900 transition-colors"><ImageIcon size={40}/></div>
+                    )}
+                    <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-stone-400">Upload High-Res Boutique Media</span>
+                  </label>
                 </div>
-                <button type="submit" disabled={loading} className="col-span-2 bg-[#eb5202] text-white py-4 rounded-sm font-bold uppercase tracking-widest hover:bg-[#d44900] shadow-lg">
-                  {loading ? "Publishing to Global Store..." : "Publish Product"}
+                <button type="submit" disabled={loading} className="col-span-3 bg-stone-900 text-white py-7 rounded-[32px] text-[12px] font-bold uppercase tracking-[0.5em] shadow-2xl hover:bg-black transition-all">
+                  {loading ? "Synchronizing with Server..." : "Execute Product Launch"}
                 </button>
               </form>
             </div>
           </div>
         )}
 
-        {/* 2. Catalog View (Integrated from Catalog.tsx) */}
-        {activeTab === 'catalog' && (
-          <div className="bg-white border border-gray-200 shadow-sm rounded-sm">
-            <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
-              <div className="relative w-72"><input type="text" placeholder="Search SKU or Name..." className="w-full pl-10 pr-4 py-2 border rounded-sm text-sm" /><Search size={16} className="absolute left-3 top-2.5 text-gray-400" /></div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase">{products.length} Products Active</p>
+        {/* Inventory Table View */}
+        {activeTab === 'inventory' && (
+          <div className="bg-white rounded-[48px] border border-stone-100 overflow-hidden shadow-sm">
+            <div className="p-8 border-b border-stone-50 flex justify-between items-center bg-stone-50/30">
+              <div className="flex gap-4"><button className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest bg-white px-6 py-3 rounded-full border border-stone-100"><Filter size={14}/> Sort</button></div>
+              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{products.length} Items Indexed</p>
             </div>
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-100 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                <tr><th className="p-4">Media</th><th className="p-4">Product Details</th><th className="p-4">Price</th><th className="p-4">Stock</th><th className="p-4 text-right">Actions</th></tr>
+            <table className="w-full text-left">
+              <thead>
+                <tr className="text-[10px] font-bold uppercase tracking-widest text-stone-400 border-b border-stone-100">
+                  <th className="p-8">Visual</th>
+                  <th className="p-8">Details</th>
+                  <th className="p-8">Valuation</th>
+                  <th className="p-8">Inventory Status</th>
+                  <th className="p-8 text-right">Actions</th>
+                </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-stone-50">
                 {products.map(p => (
-                  <tr key={p.id} className="hover:bg-gray-50 group">
-                    <td className="p-4"><img src={p.image} className="w-12 h-12 object-cover rounded shadow-sm" /></td>
-                    <td className="p-4"><p className="font-bold text-gray-800">{p.name}</p><p className="text-[10px] text-gray-400 uppercase">{p.sku}</p></td>
-                    <td className="p-4 font-bold text-[#eb5202]">₹{p.price}</td>
-                    <td className="p-4"><span className={`px-2 py-1 rounded-sm text-[10px] font-bold ${p.stock < 5 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>QTY: {p.stock}</span></td>
-                    <td className="p-4 text-right"><button onClick={() => deleteDoc(doc(db, "products", p.id))} className="text-gray-300 hover:text-red-500 transition-all"><Trash2 size={18}/></button></td>
+                  <tr key={p.id} className="hover:bg-stone-50/30 transition-all group">
+                    <td className="p-8"><img src={p.image} className="w-20 h-20 object-cover rounded-2xl shadow-sm group-hover:scale-110 transition-transform" /></td>
+                    <td className="p-8"><h4 className="font-serif text-lg">{p.name}</h4><p className="text-[10px] text-stone-400 uppercase tracking-widest mt-1">SKU: {p.sku || 'N/A'}</p></td>
+                    <td className="p-8 font-bold text-stone-900">₹{p.price}</td>
+                    <td className="p-8"><span className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${p.stock > 5 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>{p.stock} units left</span></td>
+                    <td className="p-8 text-right"><button onClick={() => deleteDoc(doc(db, "products", p.id))} className="p-4 text-red-300 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all"><Trash2 size={20}/></button></td>
                   </tr>
                 ))}
               </tbody>
@@ -165,20 +200,39 @@ const Admin = () => {
           </div>
         )}
 
-        {/* 3. Orders View (Integrated from Orders.tsx) */}
+        {/* Transaction History (Orders) */}
         {activeTab === 'orders' && (
-          <div className="bg-white border border-gray-200 shadow-sm rounded-sm overflow-hidden">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-[#333] text-white text-[10px] font-bold uppercase tracking-widest">
-                <tr><th className="p-5">Order ID</th><th className="p-5">Customer</th><th className="p-5">Status</th><th className="p-5 text-right">Update</th></tr>
+          <div className="bg-white rounded-[48px] border border-stone-100 overflow-hidden shadow-sm">
+            <div className="p-10 border-b border-stone-50 flex justify-between items-center bg-stone-900 text-white">
+              <h3 className="text-xl font-serif italic">Ledger & Logistics</h3>
+              <button className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest bg-stone-800 px-6 py-3 rounded-full hover:bg-stone-700 transition-all"><Download size={14}/> Export Manifest</button>
+            </div>
+            <table className="w-full text-left">
+              <thead>
+                <tr className="text-[10px] font-bold uppercase tracking-widest text-stone-400 border-b border-stone-100 bg-stone-50/50">
+                  <th className="p-8">Reference</th>
+                  <th className="p-8">Client</th>
+                  <th className="p-8">Status</th>
+                  <th className="p-8 text-right">Update Lifecycle</th>
+                </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-stone-50">
                 {orders.map(o => (
-                  <tr key={o.id} className="hover:bg-orange-50/30 transition-all">
-                    <td className="p-5 font-mono text-xs text-gray-400">#{o.id.slice(0,8).toUpperCase()}</td>
-                    <td className="p-5 font-bold text-gray-700">{o.customerId || 'Guest Client'}</td>
-                    <td className="p-5"><span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${o.orderStatus === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-[#fff4e5] text-[#eb5202]'}`}>{o.orderStatus || 'Pending'}</span></td>
-                    <td className="p-5 text-right"><button onClick={() => updateDoc(doc(db, "orders", o.id), { orderStatus: o.orderStatus === 'Pending' ? 'Shipped' : 'Delivered' })} className="text-[#eb5202] hover:scale-110 transition-all"><CheckCircle size={20} /></button></td>
+                  <tr key={o.id} className="hover:bg-stone-50/20 transition-all">
+                    <td className="p-8 font-mono text-[10px] text-stone-400">TRX-{o.id.slice(0,8).toUpperCase()}</td>
+                    <td className="p-8 font-serif text-lg text-stone-800">{o.customerId || 'Private Guest'}</td>
+                    <td className="p-8">
+                      <div className="flex items-center gap-3">
+                        <span className={`w-2 h-2 rounded-full ${o.orderStatus === 'Delivered' ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest">{o.orderStatus || 'Processing'}</span>
+                      </div>
+                    </td>
+                    <td className="p-8 text-right">
+                      <button onClick={() => updateDoc(doc(db, "orders", o.id), { orderStatus: o.orderStatus === 'Pending' ? 'Shipped' : 'Delivered' })} 
+                        className="bg-stone-50 px-6 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-stone-900 hover:bg-stone-900 hover:text-white transition-all border border-stone-100">
+                        Promote Stage
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -189,15 +243,5 @@ const Admin = () => {
     </div>
   );
 };
-
-const KPICard = ({ title, value, icon }: any) => (
-  <div className="bg-white p-6 rounded-sm border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-    <div className="flex justify-between items-start mb-4">
-      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{title}</p>
-      {icon}
-    </div>
-    <h3 className="text-2xl font-bold text-[#333]">{value}</h3>
-  </div>
-);
 
 export default Admin;
